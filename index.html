@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>Decoupling Microservices</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=680, user-scalable=no">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<meta name="generator" content="https://github.com/sapegin/grunt-shower-markdown">
+	<link rel="stylesheet" href="themes/ribbon/styles/screen.css">
+	
+		<link rel="stylesheet" href="styles/screen.css?1500838026000">
+	
+</head>
+<body class="list">
+	<header class="caption">
+		<h1 id="decoupling-microservices">Decoupling Microservices</h1>
+<p>by <a href="https://twitter.com/tednaleid">@tednaleid</a></p>
+
+	</header>
+
+	
+	<section class="slide shout" ><div>
+		<h1>Decoupling Microservices</h1>
+<h2>by <a href="https://twitter.com/tednaleid">@tednaleid</a></h2>
+
+	</div></section>
+	
+	<section class="slide quietest shout" ><div>
+		<h1>Microservices<br/><br/>&ldquo;loosley coupled Service-Oriented Architecture with bounded contexts&rdquo; <br/><br/>&mdash; Adrian Cockcroft (AWS/Netflix)</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Bounded Contexts</h1>
+<h2>from Domain-Driven Design, a conceptual model where <br/>a specific domain model applies</h2>
+
+	</div></section>
+	
+	<section class="slide shout quieter" ><div>
+		<h1>Microservices all share a single domain model?</h1>
+
+	</div></section>
+	
+	<section class="slide shout quieter" ><div>
+		<h1>You&#39;ve built a<br/>&quot;distributed monolith&quot;</h1>
+<h2>Watch: &quot;<a href="https://www.microservices.com/talks/dont-build-a-distributed-monolith/">Don&#39;t Build a Distributed Monolith</a>&quot;<br/>by Ben Christensen (Facebook/Netflix)</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Loosley Coupled</h1>
+
+	</div></section>
+	
+	<section class="slide quietest shout" ><div>
+		<h1>Golden Rule of Component Reliability<br/><br/>any critical component must be 10 times as reliable as the overall system&#39;s target, so that its contribution to system unreliability is noise</h1>
+<h2>from: <a href="https://queue.acm.org/detail.cfm?id=3096459">&quot;The Calculus of Service Availability&quot;, ACM Queue, Vol 15, Issue 2</a></h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Tight Coupling</h1>
+<h2>Services directly calling services</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Looser Coupling</h1>
+<h2>some caching, reverse proxy, grace periods, circuit breakers<br/><br/>issues: cache invalidation rules, cold start/cache flush,<br/>emergency changes, race conditions</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Ideal Coupling</h1>
+<h2>totally functional during a partition<br/><br/>only thing more &quot;loose&quot; is no dependency at all</h2>
+
+	</div></section>
+	
+	<section class="slide quieter shout" ><div>
+		<h1>#1 thing you can do for scalability and fault-tolerance?</h1>
+
+	</div></section>
+	
+	<section class="slide quieter shout" ><div>
+		<h1>separate your<br/>reads and writes</h1>
+<h2>don&#39;t do this if you don&#39;t need scalability &amp; fault-tolerance</h2>
+
+	</div></section>
+	
+	<section class="slide quieter shout" ><div>
+		<h1>read requests are likely many orders of magnitude more frequent</h1>
+<h2>with exceptions (logging/metrics) where writes are <em>far</em> more frequent</h2>
+
+	</div></section>
+	
+	<section class="slide quieter shout" ><div>
+		<h1>write requests have consequences</h1>
+<h2>cache-invalidation, notifications, etc</h2>
+
+	</div></section>
+	
+	<section class="slide quieter shout" ><div>
+		<h1>scale reads with materialized views</h1>
+<h2>also called &quot;derived data&quot;</h2>
+
+	</div></section>
+	
+	<section class="slide quieter shout" ><div>
+		<h1>optimized for the query patterns of each microservice</h1>
+
+	</div></section>
+	
+	<section class="slide light" ><div>
+		<h1>Separate Reads and Writes</h1>
+<img src="images/read_write.png" alt="" height="600px"/>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Kafka</h1>
+<p>what is is</p>
+<p>log-based (append-only) message broker</p>
+<p>combines databases (durable storage) and messaging (notifying consumers)</p>
+<p>retention</p>
+<p>key-based compaction</p>
+<p>topics -&gt; partitions</p>
+<p>producers append
+consumer groups offsets (__consumer_offsets)</p>
+<p>messages can be anything, text, json, binary, avro, protocol buffers</p>
+<p>(picture here )</p>
+<p><code>kt consume -brokers 10.63.103.135:9092 -topic my-topic -offsets oldest</code>
+<code>{&quot;partition&quot;:0,&quot;offset&quot;:770354,&quot;key&quot;:&quot;7768365&quot;,&quot;value&quot;:&quot;&lt;text/json/binary/whatever&quot;}</code></p>
+<p>how does it enable decoupling?</p>
+
+	</div></section>
+	
+	<section class="slide shout light" ><div>
+		<h1>enables event log-based integration between microservices</h1>
+<p>if a consumer falls behind the event log acts as a buffer and doesn&#39;t stop producers</p>
+<p>multiple specialized consumers can be created</p>
+<p>materialized views can be easily rebuilt </p>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Async event log<br/><br/>many writers<br/>many readers</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>scale to multiple availability zones, datacenters, or even multiple cloud providers</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>great for Blue/Green Deployments</h1>
+<p>new fields get added to write side first
+then modify materialized view creator so it has the new fields
+in whatever format it wants, spin up a new green cluster of materialized view creator
+that creates new green materialized views and then new green web services that read from those
+new materialized views, and you’re done</p>
+<p>if there is an issue, when you flip over to green, you can have left your old blue
+cluster up, still populating the old way of doing things and can switch back as quickly as
+flipping your load balancers back over</p>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<p>What should the materialized view creator be?</p>
+<p>akka app
+simple java app/ratpack app with kafka client consumer libraries
+stream processing framework like flink, spark, etc (apache has 10+ of these alone but they tend to be <em>heavy</em>)</p>
+<p>need good lag monitoring, pretty easy to do with kafka API or something like burrow</p>
+<p>hollow (now transition to hollow)</p>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Hollow</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Homework</h1>
+
+	</div></section>
+	
+	<section class="slide " ><div>
+		<h1>Places to Start<br/><br/><a href="https://github.com/Netflix/hollow-reference-implementation">hollow-reference-implementation</a><br/><br/>try hollow for simple lookup data<br/><br/><a href="https://github.com/wurstmeister/kafka-docker/blob/master/docker-compose.yml">kafka/zookeeper docker-compose</a> + <a href="https://github.com/edenhill/kafkacat">kafkacat</a><br/><br/>kafka + telegraf/influx for metrics</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Resources</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Learn More Kafka<br/><br/><a href="https://www.confluent.io/blog/">Confluent&#39;s Blog</a></h1>
+<h2><a href="https://www.confluent.io/blog/">https://www.confluent.io/blog/</a></h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Learn More Hollow<br/><br/><a href="http://hollow.how/">Hollow&#39;s Docs</a></h1>
+<h2><a href="http://hollow.how/">http://hollow.how/</a></h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<img src="images/DDIA.png" alt="" height="480px"/>
+<h2><a href="http://dataintensive.net/">dataintensive.net</a> - ideas for &quot;read-after-write consistency&quot; solutions</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>@tednaleid</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Questions?</h1>
+
+	</div></section>
+	
+	<section class="slide shout light" ><div>
+		
+	</div></section>
+	
+	<section class="slide shout light" ><div>
+		
+	</div></section>
+	
+	<section class="slide shout light" ><div>
+		
+	</div></section>
+	
+	<section class="slide quietest" ><div>
+		<h1>A list</h1>
+<ul>
+<li>item 1</li>
+<li>item 2</li>
+<li>item 3</li>
+</ul>
+
+	</div></section>
+	
+	<section class="slide quietest" ><div>
+		<h1>Some code</h1>
+<pre><code>&quot;foo&quot;.bar().baz()</code></pre><p><br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<span style="font-size:50%; float: right;"><a href="https://google.com"> and a link</a></span></p>
+
+	</div></section>
+	
+	<section class="slide quietest shout" ><div>
+		<h1>some text <br/><br/><a href="">highlight1</a> | <a href="">highlight2</a> | <br/><br/>some more text</h1>
+
+	</div></section>
+	
+
+	<div class="progress"><div></div></div>
+	<script src="shower/shower.min.js"></script>
+
+	
+		<script src="node_modules/shower-core/shower.min.js?1449424134000"></script>
+	
+
+	
+
+	<!-- Shower: http://shwr.me -->
+</body>
+</html>
