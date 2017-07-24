@@ -81,13 +81,19 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 !SLIDE quieter shout
 
-# scale reads with materialized views
+# decouple and scale reads with materialized views
 
 ## also called "derived data"
 
 !SLIDE quieter shout
 
 # optimized for the query patterns of each microservice
+
+!SLIDE quieter shout
+
+# decouple and scale writes with event buffers
+
+## example patterns include Event Sourcing/CQRS<br/>(Command Query Responsibility Segregation)
 
 !SLIDE light 
 # Separate Reads and Writes
@@ -97,45 +103,108 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 # Kafka
 
+!SLIDE shout
+
+# A log-based<br/>(append-only) message broker
+
+## combines databases (durable storage) and messaging (queuing and publish/subscribe)
+
+!SLIDE shout 
+# Producer (API)<br/>&darr;<br/>Kafka Broker<br/>&darr;<br/>Consumer (API)
+
+!SLIDE shout
+# Kafka cluster is made of many brokers
+
+## uses Zookeeper for leader-election and broker metadata 
+
+!SLIDE shout
+# Brokers have many named topics
+
+## replication across brokers configured per topic 
+
+!SLIDE light
+# Each topic has 1..N partitions
+<img src="images/topic_partitions.png" alt="" height="500px"/>
 
 
-what is is
+!SLIDE 
+# Producers push data to a topic's partitions<br/><br/><br/>
 
-log-based (append-only) message broker
+    # send message {"id":"123", value: "foo"} with key "123"
+    
+    echo '123,{"id":"123", value: "foo"}' |\
+        kafkacat -P -K ',' -b 127.0.0.1:9092 -t the-topic
+        
+## <br/><br/><br/>Message payload is binary data<br/>Can be String/JSON/Avro/Protocol Buffers/Whatever
+      
+!SLIDE 
+# Producers can publish lots of data quickly<br/><br/><br/>
+        
+        
+    # send 100,000 messages with key 1 through 100000
+    # and value {"id": "<#>", value: "bar"}
+    
+    seq 100000 |\
+        awk '{printf "%s,{\"id\":\"%s\", value: \"bar\"}\n", $1, $1}' |\
+        kafkacat -P -b 127.0.0.1:9092 -t the-topic -K ','
+        
+!SLIDE shout 
 
-combines databases (durable storage) and messaging (notifying consumers)
-
-retention
-
-key-based compaction
-
-topics -> partitions
-
-producers append
-consumer groups offsets (__consumer_offsets)
+# consistent hashing<br/><br><span style="font-size:70%">messages with the same key always go to the same partition</span>
 
 
-messages can be anything, text, json, binary, avro, protocol buffers
+!SLIDE shout quieter
+# Consumers are pull-based<br/><br/><span style="font-size:70%">they maintain per-partition offsets</span>
 
-(picture here )
-
-
-`kt consume -brokers 10.63.103.135:9092 -topic my-topic -offsets oldest`
-```{"partition":0,"offset":770354,"key":"7768365","value":"<text/json/binary/whatever"}```
+## by default in a special topic called `__consumer_offsets`
 
 
+!SLIDE shout quieter
+# Consumption is not destructive<br/><br/><span style="font-size:70%">messages have a retention period (default 24-hours)</span>
 
-how does it enable decoupling?
+
+!SLIDE shout quieter
+# within a consumer group there can be as many consumers as there are partitions
+
+
+!SLIDE shout quieter
+# Message compaction keeps one message per key
+
+
+
+!SLIDE light
+# Compaction keeps the latest value per key
+<img src="images/compaction.png" alt="" height="650px"/>
+
+
+!SLIDE shout quieter
+
+# Kafka Brokers have few<sup>*</sup> moving parts<br/><br/><span style="font-size:60%">focused on speed, reliability, reasonability</span>
+
+## <br/><br/><br/><br/>*compared to things like JMS, AMQP, RabbitMQ
+
+!SLIDE shout
+
+# How does Kafka enable decoupling?
 
 !SLIDE shout light
 
-# enables event log-based integration between microservices 
+enables event-based integration between microservices 
 
+!SLIDE shout light
 
 if a consumer falls behind the event log acts as a buffer and doesn't stop producers
 
-multiple specialized consumers can be created
+!SLIDE shout light
+many consumers per partition
 
+!SLIDE shout light
+multiple specialized consumers can be created (ES for search, JSON payload in S3 buckets for SPA, logging/metrics driven off kafka)
+
+!SLIDE shout light
+clear separation point, can more easily determine where errors are happening, during triage, check kafka, if it's there you know the issue is after kafka, else before
+
+!SLIDE shout light
 materialized views can be easily rebuilt 
 
 !SLIDE shout
@@ -219,29 +288,4 @@ hollow (now transition to hollow)
 !SLIDE shout
 # Questions?
 
-!SLIDE shout light
-!SLIDE shout light
-!SLIDE shout light
-
-!SLIDE quietest
-# A list
-  - item 1
-  - item 2
-  - item 3
-
-!SLIDE quietest
-
-# Some code
-
-    "foo".bar().baz()
-
-<br/>
-<br/>
-<br/>
-<br/>
-<br/>
-<span style="font-size:50%; float: right;"><a href="https://google.com"> and a link</a></span>
-
-!SLIDE quietest shout
-# some text <br/><br/>[highlight1]() | [highlight2]() | <br/><br/>some more text
 

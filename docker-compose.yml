@@ -1,0 +1,23 @@
+---
+version: '2'
+services:
+    ZOOKEEPER_1:
+        image: wurstmeister/zookeeper:latest
+        container_name: "ZOOKEEPER_1"
+        ports:
+            - "2181:2181"
+
+    KAFKA_1:
+        image: wurstmeister/kafka:0.10.1.0
+        container_name: "KAFKA_1"
+        links:
+            - "ZOOKEEPER_1:zookeeper"
+        environment:
+            - KAFKA_ADVERTISED_HOST_NAME=127.0.0.1
+            - KAFKA_ADVERTISED_PORT=9092
+            - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+            - KAFKA_AUTO_LEADER_REBALANCE_ENABLE=false
+        ports:
+            - "9092:9092"
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock

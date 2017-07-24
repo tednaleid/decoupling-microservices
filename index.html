@@ -8,7 +8,7 @@
 	<meta name="generator" content="https://github.com/sapegin/grunt-shower-markdown">
 	<link rel="stylesheet" href="themes/ribbon/styles/screen.css">
 	
-		<link rel="stylesheet" href="styles/screen.css?1500838026000">
+		<link rel="stylesheet" href="styles/screen.css?1500946928000">
 	
 </head>
 <body class="list">
@@ -100,13 +100,19 @@
 	</div></section>
 	
 	<section class="slide quieter shout" ><div>
-		<h1>scale reads with materialized views</h1>
+		<h1>decouple and scale reads with materialized views</h1>
 <h2>also called &quot;derived data&quot;</h2>
 
 	</div></section>
 	
 	<section class="slide quieter shout" ><div>
 		<h1>optimized for the query patterns of each microservice</h1>
+
+	</div></section>
+	
+	<section class="slide quieter shout" ><div>
+		<h1>decouple and scale writes with event buffers</h1>
+<h2>example patterns include Event Sourcing/CQRS<br/>(Command Query Responsibility Segregation)</h2>
 
 	</div></section>
 	
@@ -118,27 +124,127 @@
 	
 	<section class="slide shout" ><div>
 		<h1>Kafka</h1>
-<p>what is is</p>
-<p>log-based (append-only) message broker</p>
-<p>combines databases (durable storage) and messaging (notifying consumers)</p>
-<p>retention</p>
-<p>key-based compaction</p>
-<p>topics -&gt; partitions</p>
-<p>producers append
-consumer groups offsets (__consumer_offsets)</p>
-<p>messages can be anything, text, json, binary, avro, protocol buffers</p>
-<p>(picture here )</p>
-<p><code>kt consume -brokers 10.63.103.135:9092 -topic my-topic -offsets oldest</code>
-<code>{&quot;partition&quot;:0,&quot;offset&quot;:770354,&quot;key&quot;:&quot;7768365&quot;,&quot;value&quot;:&quot;&lt;text/json/binary/whatever&quot;}</code></p>
-<p>how does it enable decoupling?</p>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>A log-based<br/>(append-only) message broker</h1>
+<h2>combines databases (durable storage) and messaging (queuing and publish/subscribe)</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Producer (API)<br/>&darr;<br/>Kafka Broker<br/>&darr;<br/>Consumer (API)</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Kafka cluster is made of many brokers</h1>
+<h2>uses Zookeeper for leader-election and broker metadata</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Brokers have many named topics</h1>
+<h2>replication across brokers configured per topic</h2>
+
+	</div></section>
+	
+	<section class="slide light" ><div>
+		<h1>Each topic has 1..N partitions</h1>
+<img src="images/topic_partitions.png" alt="" height="500px"/>
+
+	</div></section>
+	
+	<section class="slide " ><div>
+		<h1>Producers push data to a topic&#39;s partitions<br/><br/><br/></h1>
+<pre><code># send message {&quot;id&quot;:&quot;123&quot;, value: &quot;foo&quot;} with key &quot;123&quot;</code>
+<code>&shy;</code>
+<code>echo &#39;123,{&quot;id&quot;:&quot;123&quot;, value: &quot;foo&quot;}&#39; |\</code>
+<code>    kafkacat -P -K &#39;,&#39; -b 127.0.0.1:9092 -t the-topic</code></pre><h2><br/><br/><br/>Message payload is binary data<br/>Can be String/JSON/Avro/Protocol Buffers/Whatever</h2>
+
+	</div></section>
+	
+	<section class="slide " ><div>
+		<h1>Producers can publish lots of data quickly<br/><br/><br/></h1>
+<pre><code># send 100,000 messages with key 1 through 100000</code>
+<code># and value {&quot;id&quot;: &quot;&lt;#&gt;&quot;, value: &quot;bar&quot;}</code>
+<code>&shy;</code>
+<code>seq 100000 |\</code>
+<code>    awk &#39;{printf &quot;%s,{\&quot;id\&quot;:\&quot;%s\&quot;, value: \&quot;bar\&quot;}\n&quot;, $1, $1}&#39; |\</code>
+<code>    kafkacat -P -b 127.0.0.1:9092 -t the-topic -K &#39;,&#39;</code></pre>
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>consistent hashing<br/><br><span style="font-size:70%">messages with the same key always go to the same partition</span></h1>
+
+	</div></section>
+	
+	<section class="slide shout quieter" ><div>
+		<h1>Consumers are pull-based<br/><br/><span style="font-size:70%">they maintain per-partition offsets</span></h1>
+<h2>by default in a special topic called <code>__consumer_offsets</code></h2>
+
+	</div></section>
+	
+	<section class="slide shout quieter" ><div>
+		<h1>Consumption is not destructive<br/><br/><span style="font-size:70%">messages have a retention period (default 24-hours)</span></h1>
+
+	</div></section>
+	
+	<section class="slide shout quieter" ><div>
+		<h1>within a consumer group there can be as many consumers as there are partitions</h1>
+
+	</div></section>
+	
+	<section class="slide shout quieter" ><div>
+		<h1>Message compaction keeps one message per key</h1>
+
+	</div></section>
+	
+	<section class="slide light" ><div>
+		<h1>Compaction keeps the latest value per key</h1>
+<img src="images/compaction.png" alt="" height="650px"/>
+
+	</div></section>
+	
+	<section class="slide shout quieter" ><div>
+		<h1>Kafka Brokers have few<sup>*</sup> moving parts<br/><br/><span style="font-size:60%">focused on speed, reliability, reasonability</span></h1>
+<h2><br/><br/><br/><br/>*compared to things like JMS, AMQP, RabbitMQ</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>How does Kafka enable decoupling?</h1>
 
 	</div></section>
 	
 	<section class="slide shout light" ><div>
-		<h1>enables event log-based integration between microservices</h1>
-<p>if a consumer falls behind the event log acts as a buffer and doesn&#39;t stop producers</p>
-<p>multiple specialized consumers can be created</p>
-<p>materialized views can be easily rebuilt </p>
+		<p>enables event-based integration between microservices </p>
+
+	</div></section>
+	
+	<section class="slide shout light" ><div>
+		<p>if a consumer falls behind the event log acts as a buffer and doesn&#39;t stop producers</p>
+
+	</div></section>
+	
+	<section class="slide shout light" ><div>
+		<p>many consumers per partition</p>
+
+	</div></section>
+	
+	<section class="slide shout light" ><div>
+		<p>multiple specialized consumers can be created (ES for search, JSON payload in S3 buckets for SPA, logging/metrics driven off kafka)</p>
+
+	</div></section>
+	
+	<section class="slide shout light" ><div>
+		<p>clear separation point, can more easily determine where errors are happening, during triage, check kafka, if it&#39;s there you know the issue is after kafka, else before</p>
+
+	</div></section>
+	
+	<section class="slide shout light" ><div>
+		<p>materialized views can be easily rebuilt </p>
 
 	</div></section>
 	
@@ -220,44 +326,6 @@ stream processing framework like flink, spark, etc (apache has 10+ of these alon
 	
 	<section class="slide shout" ><div>
 		<h1>Questions?</h1>
-
-	</div></section>
-	
-	<section class="slide shout light" ><div>
-		
-	</div></section>
-	
-	<section class="slide shout light" ><div>
-		
-	</div></section>
-	
-	<section class="slide shout light" ><div>
-		
-	</div></section>
-	
-	<section class="slide quietest" ><div>
-		<h1>A list</h1>
-<ul>
-<li>item 1</li>
-<li>item 2</li>
-<li>item 3</li>
-</ul>
-
-	</div></section>
-	
-	<section class="slide quietest" ><div>
-		<h1>Some code</h1>
-<pre><code>&quot;foo&quot;.bar().baz()</code></pre><p><br/>
-<br/>
-<br/>
-<br/>
-<br/>
-<span style="font-size:50%; float: right;"><a href="https://google.com"> and a link</a></span></p>
-
-	</div></section>
-	
-	<section class="slide quietest shout" ><div>
-		<h1>some text <br/><br/><a href="">highlight1</a> | <a href="">highlight2</a> | <br/><br/>some more text</h1>
 
 	</div></section>
 	
