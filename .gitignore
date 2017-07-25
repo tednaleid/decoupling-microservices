@@ -1,3 +1,4 @@
 .sass-cache
 *.swp
 *.i*
+.DS_Store

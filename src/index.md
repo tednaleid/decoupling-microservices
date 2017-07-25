@@ -8,8 +8,13 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 ## by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 
-!SLIDE quietest shout
-# Microservices<br/><br/>&ldquo;loosley coupled Service-Oriented Architecture with bounded contexts&rdquo; <br/><br/>&mdash; Adrian Cockcroft (AWS/Netflix)
+!SLIDE shout quieter
+# Overview<br/><span style="font-size:60%; text-align:left">Tight vs Loose Coupling<br/>What Kafka is/how it helps<br/>What Hollow is/how it helps</span>
+
+
+
+!SLIDE quieter shout
+# Microservices<br/><br/><span style="font-size:70%">&ldquo;loosley coupled Service-Oriented Architecture with bounded contexts&rdquo; <br/><br/>&mdash; Adrian Cockcroft (AWS/Netflix)</span>
 
 !SLIDE shout
 # Bounded Contexts
@@ -21,20 +26,22 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 # Microservices all share a single domain model?
 
+## is there a `.jar` file with domain classes?
+
 !SLIDE shout quieter
 
-# You've built a<br/>"distributed monolith"
+# You've built a<br/>&ldquo;distributed monolith&rdquo;
 
-## Watch: "[Don't Build a Distributed Monolith](https://www.microservices.com/talks/dont-build-a-distributed-monolith/)"<br/>by Ben Christensen (Facebook/Netflix)
+## Watch: &ldquo;[Don't Build a Distributed Monolith](https://www.microservices.com/talks/dont-build-a-distributed-monolith/)&rdquo;<br/>by Ben Christensen (Facebook/Netflix)
 
 
 !SLIDE shout
 # Loosley Coupled
 
 !SLIDE quietest shout
-# Golden Rule of Component Reliability<br/><br/>any critical component must be 10 times as reliable as the overall system's target, so that its contribution to system unreliability is noise
+# Golden Rule of Component Reliability<br/><br/><span style="font-size: 80%">&ldquo;any critical component must be 10 times as<br/> reliable as the overall system's target, so that its contribution to system unreliability is noise&rdquo;</span>
 
-## from: ["The Calculus of Service Availability", ACM Queue, Vol 15, Issue 2](https://queue.acm.org/detail.cfm?id=3096459)
+## from: [&ldquo;The Calculus of Service Availability&rdquo;, ACM Queue, Vol 15, Issue 2](https://queue.acm.org/detail.cfm?id=3096459)
 
 
 !SLIDE shout
@@ -43,18 +50,28 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 ## Services directly calling services
 
+!SLIDE light
+
+<img src="images/tight_coupling.png" alt="" height="750px"/>
+
 !SLIDE shout
 
 # Looser Coupling
 
 ## some caching, reverse proxy, grace periods, circuit breakers<br/><br/>issues: cache invalidation rules, cold start/cache flush,<br/>emergency changes, race conditions
 
+!SLIDE light
+
+<img src="images/looser_coupling.png" alt="" height="750px"/>
 
 !SLIDE shout
 
 # Ideal Coupling
 
 ## totally functional during a partition<br/><br/>only thing more "loose" is no dependency at all
+
+!SLIDE light
+<img src="images/ideal_coupling.png" alt="" height="750px"/>
 
 !SLIDE quieter shout
 
@@ -69,7 +86,7 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 !SLIDE quieter shout
 
-# read requests are likely many orders of magnitude more frequent
+# read requests are many orders of magnitude<br/>more frequent
 
 ## with exceptions (logging/metrics) where writes are <em>far</em> more frequent
 
@@ -83,17 +100,11 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 # decouple and scale reads with materialized views
 
-## also called "derived data"
+## also called &ldquo;derived data&rdquo;
 
 !SLIDE quieter shout
 
 # optimized for the query patterns of each microservice
-
-!SLIDE quieter shout
-
-# decouple and scale writes with event buffers
-
-## example patterns include Event Sourcing/CQRS<br/>(Command Query Responsibility Segregation)
 
 !SLIDE light 
 # Separate Reads and Writes
@@ -109,6 +120,12 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 ## combines databases (durable storage) and messaging (queuing and publish/subscribe)
 
+!SLIDE shout quieter
+
+# Kafka brokers have few<sup>*</sup> moving parts<br/><br/><span style="font-size:60%">focused on speed, reliability, reasonability</span>
+
+## <br/><br/><br/><br/>*compared to things like JMS, AMQP, RabbitMQ
+
 !SLIDE shout 
 # Producer (API)<br/>&darr;<br/>Kafka Broker<br/>&darr;<br/>Consumer (API)
 
@@ -118,27 +135,27 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 ## uses Zookeeper for leader-election and broker metadata 
 
 !SLIDE shout
-# Brokers have many named topics
+# brokers have many named topics
 
 ## replication across brokers configured per topic 
 
 !SLIDE light
-# Each topic has 1..N partitions
+# each topic has 1..N partitions
 <img src="images/topic_partitions.png" alt="" height="500px"/>
 
 
 !SLIDE 
-# Producers push data to a topic's partitions<br/><br/><br/>
+# producers push data to a topic's partitions<br/><br/><br/>
 
     # send message {"id":"123", value: "foo"} with key "123"
     
     echo '123,{"id":"123", value: "foo"}' |\
         kafkacat -P -K ',' -b 127.0.0.1:9092 -t the-topic
         
-## <br/><br/><br/>Message payload is binary data<br/>Can be String/JSON/Avro/Protocol Buffers/Whatever
+# <br/><br/><span style="font-size:70%">message payload is binary data<br/>can be String/JSON/Avro/Protocol Buffers/Whatever</span>
       
 !SLIDE 
-# Producers can publish lots of data quickly<br/><br/><br/>
+# producers can publish lots of data quickly<br/><br/><br/>
         
         
     # send 100,000 messages with key 1 through 100000
@@ -154,36 +171,25 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 
 !SLIDE shout quieter
-# Consumers are pull-based<br/><br/><span style="font-size:70%">they maintain per-partition offsets</span>
+# consumers are pull-based<br/><br/><span style="font-size:70%">they maintain per-partition offsets</span>
 
 ## by default in a special topic called `__consumer_offsets`
-
-
-!SLIDE shout quieter
-# Consumption is not destructive<br/><br/><span style="font-size:70%">messages have a retention period (default 24-hours)</span>
-
 
 !SLIDE shout quieter
 # partitions are balanced across a consumer group
 ## max # of consumers for a topic is the number of partitions
 
-
+!SLIDE shout quieter
+# consumption is<br/>not destructive<br/><br/><span style="font-size:70%">messages have a retention period (default 24-hours)</span>
 
 !SLIDE shout quieter
-# Message compaction keeps one message per key
-
+# message compaction keeps one message per key
 
 
 !SLIDE light
-# Compaction keeps the latest value per key
+# compaction keeps the latest value per key
 <img src="images/compaction.png" alt="" height="650px"/>
 
-
-!SLIDE shout quieter
-
-# Kafka Brokers have few<sup>*</sup> moving parts<br/><br/><span style="font-size:60%">focused on speed, reliability, reasonability</span>
-
-## <br/><br/><br/><br/>*compared to things like JMS, AMQP, RabbitMQ
 
 !SLIDE shout
 
@@ -191,10 +197,10 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 !SLIDE shout quieter 
 
-# if a consumer falls behind the kafka acts as a buffer and doesn't stop producers
+# if a consumer falls behind, the topic acts as a buffer and doesn't stop producers
 
 !SLIDE shout quieter 
-# multiple specialized consumers can be created<br/><span style="font-size:50%">Elasticsearch index for searching<br/>JSON payload in S3 buckets for SPA<br/>logging/metrics driven off kafka</span>
+# multiple specialized consumers can be created<br/><br/><br/><span style="font-size:50%"><p>Elasticsearch index for searching</p><p>JSON payload in S3 buckets for SPA</p><p>logging/metrics driven off Kafka</p></span>
 
 !SLIDE light
 
@@ -202,7 +208,7 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 <img src="images/scale_materialized_views.png" alt="" height="500px"/>
 
-## Kafka "MirrorMaker" can mirror the contents of a topic to other kafka clusters
+## Kafka &ldquo;MirrorMaker&rdquo; can mirror the contents of a topic to other kafka clusters
 
 !SLIDE shout
 # materialized views can be thrown away and rebuilt
@@ -214,7 +220,7 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 ## also for replicating data to lower environments
 
 !SLIDE shout quieter 
-# clear separation between writes and reads<br/><br/><span style="font-size:70%">if it's in kafka, it's downstream, otherwise upstream</span>
+# clear separation between writes and reads<br/><br/><span style="font-size:70%">triaging a bug?<br/>if it's in kafka, it's downstream, otherwise upstream</span>
 
 
 !SLIDE light
@@ -225,65 +231,57 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 !SLIDE shout
 
-# Simple Java/Groovy app with Kafka consumer libraries
+# simple Java/Groovy app with Kafka consumer libraries
 
 !SLIDE shout
 
-# Akka Kafka Streams app
-
-## or RxJava or Spring Reactor
+# Akka Kafka<br/>Streams app<br/><br/><span style="font-size:60%">or Ratpack/RxJava/Spring Reactor something async</br>
 
 !SLIDE shout
-# Stream processing framework like Spark, Flink, etc
+# stream processing framework like<br/>Spark, Flink, etc
  
 ## Apache alone has 10+ of these, but they tend to be _heavy_
 
 !SLIDE shout
 
-# Hollow
+# Hollow<br/><span style="font-size:40%; line-height: 0px;">Netflix Java API for non-durable in-memory caches</span>
 
-!SLIDE shout
-
-# Netflix Java API for<br/>non-durable<br/>in-memory caches
-
-## should never be the source of truth
+## Used in production for over 2 years
 
 !SLIDE shout quieter
 
-# &ldquo;a way to compress your dataset in memory while still providing O(1) access to any portion of it&rdquo; <br/><span style="font-size:50%">- Drew Koszewnik (lead contributor, Netflix)</span>
+# <span style="font-size:85%">&ldquo;a way to compress your dataset in memory while still providing O(1) access to any portion of it&rdquo;</span> <br/><span style="font-size:50%">- Drew Koszewnik (lead contributor, Netflix)</span>
 
 !SLIDE shout quieter
-# megabytes to gigabytes,<br/>but not terabytes
+# Kilobytes to Megabytes, often Gigabytes,<br/>but not Terabytes
+
+## works hard to minimize heap space and GC impact of updates
 
 !SLIDE shout quieter
-# not suitable for every kind of data problem<br/><span style="font-size:70%">but great for the ones it is a fit for</span>
-
+# not suitable for every kind of data problem<br/><br/><span style="font-size:70%">but great for the ones it is a fit for</span>
 
 !SLIDE shout
 
 # Single Producer<br/>Many Consumers
 
-!SLIDE shout
+!SLIDE light
 
-# HollowProducer main components are publisher and announcer
+# Producer requires a Publisher<br/>and an Announcer
 
-## TODO better example, details on what publisher writes out, delts, files can be written
+<img src="images/hollow_producer.png" alt="" height="500px"/>
 
+!SLIDE light
 
-!SLIDE shout
+# Consumer requires an AnnouncementWatcher and a BlobRetriever
 
-# HollowConsumer main components are BlobRetriever and AnnouncementWatcher
-
-## consumers define their own index on the data for efficient retrieval
-
-## if data gets deleted you want to reload the full set on some period schedula (nightly) so orphans don't hang around forever
+<img src="images/hollow_consumer.png" alt="" height="400px"/>
 
 !SLIDE shout
 
 # Primary Use Cases
 
 
-!SLIDE shout
+!SLIDE shout quieter
 
 # read-heavy lookup data where objects change relatively frequently
 
@@ -302,44 +300,42 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 # initial load at startup then resilient to network partitions
 
-## resilient to partitions
+!SLIDE shout quieter
 
-!SLIDE shout
-
-# fewer running servers/moving pieces
+# fewer running servers/moving pieces<br/>to be available
 
 
-!SLIDE shout
+!SLIDE shout quieter
 
-# faster response times, no network calls, just memory access
+# faster response times,<br/>no network calls,<br/>just memory access
 
 
 !SLIDE shout
 
-# When should you use those instead?
+# When should you use redis/memcached instead?
 
 
 !SLIDE shout
 
-# Data size is quite large
+# data size is<br/>quite large
 
 !SLIDE shout
 
-# Data changes very frequently
+# data changes<br/>very frequently
 
 
 !SLIDE shout
 
-# Data _must_ be consistent across servers
+# data _must_ be consistent across servers
 
 
 !SLIDE shout
 
 # Other Considerations
 
-!SLIDE shout quietest
+!SLIDE shout quieter
 
-# Single Producer<br/>need to think about failover (zookeeper/etcd with leader election, multiple hot producers)
+# Single Producer<br/><br/><span style="font-size:70%">need to think about failover (zookeeper/etcd with leader election, multiple hot producers)</span>
 
 
 !SLIDE shout
@@ -371,10 +367,8 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 !SLIDE shout
 
 <img src="images/DDIA.png" alt="" height="480px"/>
-## [dataintensive.net](http://dataintensive.net/) - ideas for "read-after-write consistency" solutions
 
-
-
+## [dataintensive.net](http://dataintensive.net/) - ideas for &ldquo;read-after-write consistency&rdquo; solutions
 
 !SLIDE shout
 # @tednaleid
