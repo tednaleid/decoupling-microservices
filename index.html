@@ -192,7 +192,8 @@
 	</div></section>
 	
 	<section class="slide shout quieter" ><div>
-		<h1>within a consumer group there can be as many consumers as there are partitions</h1>
+		<h1>partitions are balanced across a consumer group</h1>
+<h2>max # of consumers for a topic is the number of partitions</h2>
 
 	</div></section>
 	
@@ -218,71 +219,170 @@
 
 	</div></section>
 	
-	<section class="slide shout light" ><div>
-		<p>enables event-based integration between microservices </p>
+	<section class="slide shout quieter" ><div>
+		<h1>if a consumer falls behind the kafka acts as a buffer and doesn&#39;t stop producers</h1>
 
 	</div></section>
 	
-	<section class="slide shout light" ><div>
-		<p>if a consumer falls behind the event log acts as a buffer and doesn&#39;t stop producers</p>
+	<section class="slide shout quieter" ><div>
+		<h1>multiple specialized consumers can be created<br/><span style="font-size:50%">Elasticsearch index for searching<br/>JSON payload in S3 buckets for SPA<br/>logging/metrics driven off kafka</span></h1>
 
 	</div></section>
 	
-	<section class="slide shout light" ><div>
-		<p>many consumers per partition</p>
-
-	</div></section>
-	
-	<section class="slide shout light" ><div>
-		<p>multiple specialized consumers can be created (ES for search, JSON payload in S3 buckets for SPA, logging/metrics driven off kafka)</p>
-
-	</div></section>
-	
-	<section class="slide shout light" ><div>
-		<p>clear separation point, can more easily determine where errors are happening, during triage, check kafka, if it&#39;s there you know the issue is after kafka, else before</p>
-
-	</div></section>
-	
-	<section class="slide shout light" ><div>
-		<p>materialized views can be easily rebuilt </p>
-
-	</div></section>
-	
-	<section class="slide shout" ><div>
-		<h1>Async event log<br/><br/>many writers<br/>many readers</h1>
-
-	</div></section>
-	
-	<section class="slide shout" ><div>
+	<section class="slide light" ><div>
 		<h1>scale to multiple availability zones, datacenters, or even multiple cloud providers</h1>
+<img src="images/scale_materialized_views.png" alt="" height="500px"/>
+<h2>Kafka &quot;MirrorMaker&quot; can mirror the contents of a topic to other kafka clusters</h2>
 
 	</div></section>
 	
 	<section class="slide shout" ><div>
-		<h1>great for Blue/Green Deployments</h1>
-<p>new fields get added to write side first
-then modify materialized view creator so it has the new fields
-in whatever format it wants, spin up a new green cluster of materialized view creator
-that creates new green materialized views and then new green web services that read from those
-new materialized views, and you’re done</p>
-<p>if there is an issue, when you flip over to green, you can have left your old blue
-cluster up, still populating the old way of doing things and can switch back as quickly as
-flipping your load balancers back over</p>
+		<h1>materialized views can be thrown away and rebuilt</h1>
 
 	</div></section>
 	
 	<section class="slide shout" ><div>
-		<p>What should the materialized view creator be?</p>
-<p>akka app
-simple java app/ratpack app with kafka client consumer libraries
-stream processing framework like flink, spark, etc (apache has 10+ of these alone but they tend to be <em>heavy</em>)</p>
-<p>need good lag monitoring, pretty easy to do with kafka API or something like burrow</p>
-<p>hollow (now transition to hollow)</p>
+		<h1>great for blue/green deployments</h1>
+<h2>also for replicating data to lower environments</h2>
+
+	</div></section>
+	
+	<section class="slide shout quieter" ><div>
+		<h1>clear separation between writes and reads<br/><br/><span style="font-size:70%">if it&#39;s in kafka, it&#39;s downstream, otherwise upstream</span></h1>
+
+	</div></section>
+	
+	<section class="slide light" ><div>
+		<h1>What can create materialized views?</h1>
+<img src="images/materialized_view_creator.png" alt="" height="450px"/>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Simple Java/Groovy app with Kafka consumer libraries</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Akka Kafka Streams app</h1>
+<h2>or RxJava or Spring Reactor</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Stream processing framework like Spark, Flink, etc</h1>
+<h2>Apache alone has 10+ of these, but they tend to be <em>heavy</em></h2>
 
 	</div></section>
 	
 	<section class="slide shout" ><div>
 		<h1>Hollow</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Netflix Java API for<br/>non-durable<br/>in-memory caches</h1>
+<h2>should never be the source of truth</h2>
+
+	</div></section>
+	
+	<section class="slide shout quieter" ><div>
+		<h1>&ldquo;a way to compress your dataset in memory while still providing O(1) access to any portion of it&rdquo; <br/><span style="font-size:50%">- Drew Koszewnik (lead contributor, Netflix)</span></h1>
+
+	</div></section>
+	
+	<section class="slide shout quieter" ><div>
+		<h1>megabytes to gigabytes,<br/>but not terabytes</h1>
+
+	</div></section>
+	
+	<section class="slide shout quieter" ><div>
+		<h1>not suitable for every kind of data problem<br/><span style="font-size:70%">but great for the ones it is a fit for</span></h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Single Producer<br/>Many Consumers</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>HollowProducer main components are publisher and announcer</h1>
+<h2>TODO better example, details on what publisher writes out, delts, files can be written</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>HollowConsumer main components are BlobRetriever and AnnouncementWatcher</h1>
+<h2>consumers define their own index on the data for efficient retrieval</h2>
+<h2>if data gets deleted you want to reload the full set on some period schedula (nightly) so orphans don&#39;t hang around forever</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Primary Use Cases</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>read-heavy lookup data where objects change relatively frequently</h1>
+<h2>weekly/daily/hourly, but not every second</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Netflix uses it for video metadata</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>why use this over memcached/redis or a full database?</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>initial load at startup then resilient to network partitions</h1>
+<h2>resilient to partitions</h2>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>fewer running servers/moving pieces</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>faster response times, no network calls, just memory access</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>When should you use those instead?</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Data size is quite large</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Data changes very frequently</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Data <em>must</em> be consistent across servers</h1>
+
+	</div></section>
+	
+	<section class="slide shout" ><div>
+		<h1>Other Considerations</h1>
+
+	</div></section>
+	
+	<section class="slide shout quietest" ><div>
+		<h1>Single Producer<br/>need to think about failover (zookeeper/etcd with leader election, multiple hot producers)</h1>
 
 	</div></section>
 	

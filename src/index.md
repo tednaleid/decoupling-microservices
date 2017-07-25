@@ -164,7 +164,9 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 
 !SLIDE shout quieter
-# within a consumer group there can be as many consumers as there are partitions
+# partitions are balanced across a consumer group
+## max # of consumers for a topic is the number of partitions
+
 
 
 !SLIDE shout quieter
@@ -187,65 +189,157 @@ by <a href="https://twitter.com/tednaleid">@tednaleid</a>
 
 # How does Kafka enable decoupling?
 
-!SLIDE shout light
+!SLIDE shout quieter 
 
-enables event-based integration between microservices 
+# if a consumer falls behind the kafka acts as a buffer and doesn't stop producers
 
-!SLIDE shout light
+!SLIDE shout quieter 
+# multiple specialized consumers can be created<br/><span style="font-size:50%">Elasticsearch index for searching<br/>JSON payload in S3 buckets for SPA<br/>logging/metrics driven off kafka</span>
 
-if a consumer falls behind the event log acts as a buffer and doesn't stop producers
-
-!SLIDE shout light
-many consumers per partition
-
-!SLIDE shout light
-multiple specialized consumers can be created (ES for search, JSON payload in S3 buckets for SPA, logging/metrics driven off kafka)
-
-!SLIDE shout light
-clear separation point, can more easily determine where errors are happening, during triage, check kafka, if it's there you know the issue is after kafka, else before
-
-!SLIDE shout light
-materialized views can be easily rebuilt 
-
-!SLIDE shout
-
-# Async event log<br/><br/>many writers<br/>many readers
-
-!SLIDE shout
+!SLIDE light
 
 # scale to multiple availability zones, datacenters, or even multiple cloud providers
 
-!SLIDE shout
+<img src="images/scale_materialized_views.png" alt="" height="500px"/>
 
-# great for Blue/Green Deployments
-
-new fields get added to write side first
-then modify materialized view creator so it has the new fields
-in whatever format it wants, spin up a new green cluster of materialized view creator
-that creates new green materialized views and then new green web services that read from those
-new materialized views, and you’re done
-
-
-if there is an issue, when you flip over to green, you can have left your old blue
-cluster up, still populating the old way of doing things and can switch back as quickly as
-flipping your load balancers back over
-
+## Kafka "MirrorMaker" can mirror the contents of a topic to other kafka clusters
 
 !SLIDE shout
+# materialized views can be thrown away and rebuilt
 
-What should the materialized view creator be?
+!SLIDE shout 
 
-akka app
-simple java app/ratpack app with kafka client consumer libraries
-stream processing framework like flink, spark, etc (apache has 10+ of these alone but they tend to be _heavy_)
+# great for blue/green deployments
 
-need good lag monitoring, pretty easy to do with kafka API or something like burrow
+## also for replicating data to lower environments
 
-hollow (now transition to hollow)
+!SLIDE shout quieter 
+# clear separation between writes and reads<br/><br/><span style="font-size:70%">if it's in kafka, it's downstream, otherwise upstream</span>
+
+
+!SLIDE light
+
+# What can create materialized views?
+
+<img src="images/materialized_view_creator.png" alt="" height="450px"/>
+
+!SLIDE shout
+
+# Simple Java/Groovy app with Kafka consumer libraries
+
+!SLIDE shout
+
+# Akka Kafka Streams app
+
+## or RxJava or Spring Reactor
+
+!SLIDE shout
+# Stream processing framework like Spark, Flink, etc
+ 
+## Apache alone has 10+ of these, but they tend to be _heavy_
 
 !SLIDE shout
 
 # Hollow
+
+!SLIDE shout
+
+# Netflix Java API for<br/>non-durable<br/>in-memory caches
+
+## should never be the source of truth
+
+!SLIDE shout quieter
+
+# &ldquo;a way to compress your dataset in memory while still providing O(1) access to any portion of it&rdquo; <br/><span style="font-size:50%">- Drew Koszewnik (lead contributor, Netflix)</span>
+
+!SLIDE shout quieter
+# megabytes to gigabytes,<br/>but not terabytes
+
+!SLIDE shout quieter
+# not suitable for every kind of data problem<br/><span style="font-size:70%">but great for the ones it is a fit for</span>
+
+
+!SLIDE shout
+
+# Single Producer<br/>Many Consumers
+
+!SLIDE shout
+
+# HollowProducer main components are publisher and announcer
+
+## TODO better example, details on what publisher writes out, delts, files can be written
+
+
+!SLIDE shout
+
+# HollowConsumer main components are BlobRetriever and AnnouncementWatcher
+
+## consumers define their own index on the data for efficient retrieval
+
+## if data gets deleted you want to reload the full set on some period schedula (nightly) so orphans don't hang around forever
+
+!SLIDE shout
+
+# Primary Use Cases
+
+
+!SLIDE shout
+
+# read-heavy lookup data where objects change relatively frequently
+
+## weekly/daily/hourly, but not every second
+
+!SLIDE shout
+
+# Netflix uses it for video metadata
+
+!SLIDE shout
+
+# why use this over memcached/redis or a full database?
+
+
+!SLIDE shout
+
+# initial load at startup then resilient to network partitions
+
+## resilient to partitions
+
+!SLIDE shout
+
+# fewer running servers/moving pieces
+
+
+!SLIDE shout
+
+# faster response times, no network calls, just memory access
+
+
+!SLIDE shout
+
+# When should you use those instead?
+
+
+!SLIDE shout
+
+# Data size is quite large
+
+!SLIDE shout
+
+# Data changes very frequently
+
+
+!SLIDE shout
+
+# Data _must_ be consistent across servers
+
+
+!SLIDE shout
+
+# Other Considerations
+
+!SLIDE shout quietest
+
+# Single Producer<br/>need to think about failover (zookeeper/etcd with leader election, multiple hot producers)
 
 
 !SLIDE shout
